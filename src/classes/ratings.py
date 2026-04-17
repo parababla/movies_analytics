@@ -1,6 +1,5 @@
-import datetime 
+import datetime
 from collections import Counter
-
 
 class Ratings:
     """
@@ -313,3 +312,4 @@ class Ratings:
             top_users = dict(sorted(top_users.items(), key=lambda item: item[1], reverse=True)[:n])
 
             return top_users
+ 

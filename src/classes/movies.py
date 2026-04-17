@@ -1,18 +1,18 @@
 import re
 from collections import Counter
 
-
 class Movies:
     """
     Analyzing data from movies.csv
     """
     def __init__(self, path_to_the_file):
         self.path = path_to_the_file
-        self.data = self.read_file()
+        self.data = self.read_file() # вся таблица (первые 1_000 строк)
         """
         Put here any fields that you think you will need.
         """   
 
+    # просто читает файл
     def read_file(self):
         try:
             with open(self.path, 'r', encoding='utf-8') as file:
@@ -31,13 +31,13 @@ class Movies:
             
         return data
     
-
+    # выделение жанров из строки
     def extract_genres(self, row):
         genres = [genre.strip() for genre in row.split('|') if genre.strip() != '']
 
         return genres
     
-
+    # чтение csv строки
     def str_handler(self,string):
         first_quote = False
         string = string + ','
@@ -75,7 +75,7 @@ class Movies:
             
         return new_string
 
-
+    # выделение года из названия фильма (title)
     def extract_year(self):
         years = []
         for row in self.data:

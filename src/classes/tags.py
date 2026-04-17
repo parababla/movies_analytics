@@ -13,17 +13,48 @@ class Tags:
             self.tags = self.select_tags(self.read_file())
         else:
             raise FileNotFoundError(f"File did not exist: {path_to_the_file}")
-        
 
     def read_file(self):
-        try:
-            with open(self.path, 'r', encoding='utf-8') as file:
-                lines = file.readlines()[1:1001]
-                lines = [line.strip() for line in lines]
-            return lines
-        except FileNotFoundError as e:
-            print(e)
-        
+        with open(self.path, 'r', encoding='utf-8') as file:
+            lines = []
+            line_number = -1
+                
+            for line in file:
+                line_number += 1
+                line = line.strip()
+
+                if line_number == 0 and line != "userId,movieId,tag,timestamp":
+                    raise Exception(f"Incorrect file header")
+                
+                if line_number == 0:
+                    continue
+
+                if len(lines) >= 1000:
+                    break
+                    
+                data = line.split(',')
+                    
+                if len(data) != 4:
+                    raise Exception(f"Invalid type of string in the file")
+                    
+                if not data[0].strip().isdigit():
+                    raise Exception(f"Invalid data type in the first column")
+                    
+                if not data[1].strip().isdigit():
+                    raise Exception(f"Invalid data type in the second column")
+                    
+                if not data[2].strip():
+                    raise Exception(f"Invalid data type in the third column")
+                    
+                if not data[3].strip().isdigit():
+                    raise Exception(f"Invalid data type in the fourth column")
+                    
+                lines.append(line)  
+            if len(lines) == 0:
+                raise Exception("File contains no data or only header")                
+        return lines
+
+
 
     def select_tags(self, lines):
         tags = [line.split(',')[2] for line in lines]
@@ -104,3 +135,4 @@ class Tags:
                 tags_with_word.add(tag)
         
         return sorted(tags_with_word)
+

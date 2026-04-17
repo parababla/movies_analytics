@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from collections import Counter
-
+from classes.movies import Movies
 
 class Links:
 
@@ -11,26 +11,61 @@ class Links:
     Analyzing data from links.csv
     """
 
-    def __init__(self, path_to_the_file):
-        if os.path.exists(path_to_the_file):
+    def __init__(self, path_to_the_file, path_to_movie):
+        if os.path.exists(path_to_the_file) and os.path.exists(path_to_movie):
             self.path = path_to_the_file
             file = self.read_file()
             self.movieId = self.select_movieId(file)
             self.imdbId = self.select_imdbId(file)
             self.tmdbId = self.select_tmdbId(file)
+            self.dict_title = self.select_title(path_to_movie)
         else:
-            raise FileNotFoundError(f"File did not exist: {path_to_the_file}")
-    
-    
+            raise FileNotFoundError(f"File did not exist: {path_to_the_file} or {path_to_movie}")
+
+
     def read_file(self):
-        try:
-            with open(self.path, 'r', encoding='utf-8') as file:
-                lines = file.readlines()[1:1001]
-                lines = [line.strip() for line in lines]
-            return lines
-        except FileNotFoundError as e:
-            print(e)
-        
+        with open(self.path, 'r', encoding='utf-8') as file:
+            lines = []
+            line_number = -1
+                
+            for line in file:
+                line_number += 1
+                line = line.strip()
+
+                if line_number == 0 and line != "movieId,imdbId,tmdbId":
+                    raise Exception(f"Incorrect file header")
+                
+                if line_number == 0:
+                    continue
+
+                if len(lines) >= 1000:
+                    break
+                    
+                data = line.split(',')
+                    
+                if len(data) != 3:
+                    raise Exception(f"Invalid type of string in the file")
+                    
+                if not data[0].strip().isdigit():
+                    raise Exception(f"Invalid data type in the first column")
+                    
+                if not data[1].strip().isdigit():
+                    raise Exception(f"Invalid data type in the second column")
+                    
+                # if not data[2].strip().isdigit():
+                #     raise Exception(f"Invalid data type in the third column")
+                    
+                lines.append(line)
+            if len(lines) == 0:
+                raise Exception("File contains no data or only header")              
+        return lines
+
+    def select_title(self, path_to_movie):
+        movies = Movies(path_to_movie)
+        movieId = [line[0] for line in movies.data]
+        titles = [line[1] for line in movies.data]
+        dict_title = dict(zip(movieId, titles))
+        return dict_title
 
     def select_movieId(self, lines):
         movieId = [line.split(',')[0] for line in lines]
@@ -180,10 +215,16 @@ class Links:
         Метод возвращает словарь с n самыми популярными фильмами, где ключи — это названия фильмов, 
         а значения — их бюджеты. Отсортируйте его по убыванию бюджета.
         """
-        movieTitle_budget = self.get_imdb(list_of_movies, ['Title', 'Budget'])
-        title = [item[1] for item in movieTitle_budget]
-        budget = [item[2] for item in movieTitle_budget]
-
+        movieTitle_budget = self.get_imdb(list_of_movies, ['Budget'])
+        budget_dict = {}
+        for item in movieTitle_budget:
+            movie_id = item[0]
+            budget = item[1]
+            budget_dict[movie_id] = budget
+        
+        title = [self.dict_title[int(movie_id)] for movie_id in list_of_movies]
+        budget = [budget_dict[movie_id] for movie_id in list_of_movies]
+        
         most_budgets = dict(zip(title, budget))
         most_budgets = sorted(most_budgets.items(), key=lambda x: (-x[1], x[0]))[:n]
         return dict(most_budgets)
@@ -199,14 +240,35 @@ class Links:
         а значениями — разница между совокупным доходом от проката по всему миру и бюджетом. 
         Отсортируйте словарь по убыванию разницы.
         """
-        title_money_budget = self.get_imdb(list_of_movies, ['Title', 'Gross worldwide', 'Budget'])
-        title = [item[1] for item in title_money_budget]
-        money = [item[2] for item in title_money_budget]
-        budget = [item[3] for item in title_money_budget]
-        profit = [money[i] - budget[i] for i in range(len(title_money_budget))]
-        most_profit = dict(zip(title, profit))
-        most_profit = sorted(most_profit.items(), key=lambda x: (-x[1], x[0]))[:n]
-        return dict(most_profit)
+        movie_data = self.get_imdb(list_of_movies, ['Gross worldwide', 'Budget'])
+    
+        gross_dict = {}
+        budget_dict = {}
+        
+        for item in movie_data:
+            movie_id = item[0]
+            gross_worldwide = item[1]
+            budget = item[2]
+            gross_dict[movie_id] = gross_worldwide
+            budget_dict[movie_id] = budget
+        
+        profit_dict = {}
+        for movie_id in list_of_movies:
+            if movie_id in gross_dict and movie_id in budget_dict:
+                profit = gross_dict[movie_id] - budget_dict[movie_id]
+                profit_dict[movie_id] = profit
+        
+        title_profit_pairs = []
+        for movie_id in list_of_movies:
+            if movie_id in profit_dict:
+                title = self.dict_title[int(movie_id)]
+                profit = profit_dict[movie_id]
+                title_profit_pairs.append((title, profit))
+        
+        title_profit_pairs.sort(key=lambda x: (-x[1], x[0]))
+        result = dict(title_profit_pairs[:n])
+        
+        return result
 
 
     def longest(self, n, list_of_movies):
@@ -220,12 +282,25 @@ class Links:
         а значениями — их продолжительность. Если есть несколько версий, выберите любую.
         Отсортируйте по убыванию продолжительности.
         """
-        title_time = self.get_imdb(list_of_movies, ['Title', 'Runtime'])
-        title = [item[1] for item in title_time]
-        time = [item[2] for item in title_time]
-        most_long = dict(zip(title, time))
-        most_long = sorted(most_long.items(), key=lambda x: (-x[1], x[0]))[:n]
-        return dict(most_long)
+        movie_data = self.get_imdb(list_of_movies, ['Runtime'])
+    
+        runtime_dict = {}
+        for item in movie_data:
+            movie_id = item[0]
+            runtime = item[1]
+            runtime_dict[movie_id] = runtime
+
+        title_runtime_pairs = []
+        for movie_id in list_of_movies:
+            if movie_id in runtime_dict:
+                title = self.dict_title[int(movie_id)]
+                runtime = runtime_dict[movie_id]
+                title_runtime_pairs.append((title, runtime))
+        
+        title_runtime_pairs.sort(key=lambda x: (-x[1], x[0]))
+        result = dict(title_runtime_pairs[:n])
+        
+        return result
         
 
     def top_cost_per_minute(self, n, list_of_movies):
@@ -239,12 +314,31 @@ class Links:
         Бюджеты могут быть в разных валютах — не обращайте на это внимания. 
         Значения должны быть округлены до двух знаков после запятой. Отсортируйте их по убыванию.
         """
+        movie_data = self.get_imdb(list_of_movies, ['Budget', 'Runtime'])
+        budget_dict = {}
+        runtime_dict = {}
+        
+        for item in movie_data:
+            movie_id = item[0]
+            budget_dict[movie_id] = item[1]
+            runtime_dict[movie_id] = item[2]
+        
+        cost_per_minute_dict = {}
+        for movie_id in list_of_movies:
+            if movie_id in budget_dict and movie_id in runtime_dict:
+                cost = budget_dict[movie_id] / runtime_dict[movie_id]
+                cost_per_minute_dict[movie_id] = round(cost, 2)
+        
+        title_cost_pairs = []
+        for movie_id in list_of_movies:
+            if movie_id in cost_per_minute_dict:
+                title = self.dict_title[int(movie_id)]
+                cost = cost_per_minute_dict[movie_id]
+                title_cost_pairs.append((title, cost))
+        
+        title_cost_pairs.sort(key=lambda x: (-x[1], x[0]))
+        result = dict(title_cost_pairs[:n])
+        
+        return result
 
-        title_budget_time = self.get_imdb(list_of_movies, ['Title', 'Budget', 'Runtime'])
-        title = [item[1] for item in title_budget_time]
-        budget = [item[2] for item in title_budget_time]
-        time = [item[3] for item in title_budget_time]
-        cost = [round(budget[i] / time[i], 2) for i in range(len(title_budget_time))]
-        most_cost = dict(zip(title, cost))
-        most_cost = sorted(most_cost.items(), key=lambda x: (-x[1], x[0]))[:n]
-        return dict(most_cost)
+   

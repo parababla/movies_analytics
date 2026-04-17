@@ -1,20 +1,5 @@
 import pytest
-import os
-from movies import Movies
-from tags import Tags
-from links import Links
-from ratings import Ratings
 
-"""
-if the methods return the correct data types,
-if the list elements have the correct data types,
-if the returned data is sorted correctly.
-
-"""
-PATH_TO_CSV_MOVIES = "../datasets/movies.csv"
-PATH_TO_CSV_TAGS = "../datasets/tags.csv"
-PATH_TO_CSV_LINKS = "../datasets/links.csv"
-PATH_TO_CSV_RATINGS = "../datasets/ratings.csv"
 
 class Tests:    
     # #Movies
@@ -200,7 +185,7 @@ class Tests:
     
     #Links
     def test_select_methods(self):
-        links = Links(PATH_TO_CSV_LINKS)
+        links = Links(PATH_TO_CSV_LINKS, PATH_TO_CSV_MOVIES)
         
         for movie_id in links.movieId[:10]:
             assert movie_id.isdigit(), f"movieId должен содержать только цифры: {movie_id}"
@@ -209,7 +194,7 @@ class Tests:
             assert imdb_id.isdigit() or imdb_id == '', f"imdbId должен содержать только цифры: {imdb_id}"
             
     def test_get_imdb(self):
-        links = Links(PATH_TO_CSV_LINKS)
+        links = Links(PATH_TO_CSV_LINKS, PATH_TO_CSV_MOVIES)
         
         test_movies = links.movieId[:3] if len(links.movieId) >= 3 else links.movieId
         test_fields = ['Title', 'Director']
@@ -227,7 +212,7 @@ class Tests:
             pytest.skip(f"пропуск теста: {e}")
             
     def test_top_directors(self):
-        links = Links(PATH_TO_CSV_LINKS)
+        links = Links(PATH_TO_CSV_LINKS, PATH_TO_CSV_MOVIES)
         test_movies = links.movieId[:1]
         try:
             result = links.top_directors(1, test_movies)
@@ -236,7 +221,7 @@ class Tests:
             pytest.skip(f"пропуск теста: {e}")
             
     def test_most_expensive(self):
-        links = Links(PATH_TO_CSV_LINKS)
+        links = Links(PATH_TO_CSV_LINKS, PATH_TO_CSV_MOVIES)
         try:
             test_movies = links.movieId[:1] if len(links.movieId) > 0 else []
             
@@ -251,7 +236,7 @@ class Tests:
             pytest.skip(f"пропуск теста most_expensive из-за: {e}")
     
     def test_most_profitable(self):
-        links = Links(PATH_TO_CSV_LINKS)
+        links = Links(PATH_TO_CSV_LINKS, PATH_TO_CSV_MOVIES)
         test_movies = links.movieId[:1]
         n = 1
         try:
@@ -274,7 +259,7 @@ class Tests:
             pass
         
     def test_links_longest(self):
-        links = Links(PATH_TO_CSV_LINKS)
+        links = Links(PATH_TO_CSV_LINKS, PATH_TO_CSV_MOVIES)
         test_movies = links.movieId[:1]
         n = 1
         try:
@@ -295,7 +280,7 @@ class Tests:
             pytest.skip(f"пропуск теста: {e}")
     
     def test_top_cost_per_minute(self):
-        links = Links(PATH_TO_CSV_LINKS)
+        links = Links(PATH_TO_CSV_LINKS, PATH_TO_CSV_MOVIES)
         test_movies = links.movieId[:1]
         n = 1
         try:
