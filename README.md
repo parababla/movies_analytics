@@ -106,7 +106,7 @@
 | `select_imdbId(lines)` | Извлекает вторую колонку (`imdbId`) из каждой строки. |
 | `select_tmdbId(lines)` | Извлекает третью колонку (`tmdbId`) из каждой строки. |
 | `get_imdb(list_of_movies, list_of_fields)` | Возвращает список списков `[movieId, field1, field2, ...]`. |
-| `imdb_parsing(imdbId, field)` | Выполняет HTTP-запрос к странице `https://www.imdb.com/title/tt{imdbId}/`. Парсит HTML с помощью BeautifulSoup. Поддерживаемые поля: `Director`, `Budget`, `Gross worldwide`, `Runtime`, `Title`. Для числовых значений использует регулярное выражение `r'[\d,]+'`. |
+| `imdb_parsing(imdbId, field)` | Выполняет HTTP-запрос к странице `https://www.imdb.com/title/tt{imdbId}/`. Парсит HTML с помощью BeautifulSoup. Поддерживаемые поля: `Director`, `Budget`, `Gross worldwide`, `Runtime`, `Title`. |
 | `top_directors(n, list_of_movies)` | Возвращает словарь из `n` режиссёров с наибольшим количеством фильмов в переданном списке. |
 | `most_expensive(n, list_of_movies)` | Возвращает словарь из `n` фильмов с наибольшим бюджетом. |
 | `most_profitable(n, list_of_movies)` | Возвращает словарь из `n` фильмов с наибольшей прибылью (мировые сборы минус бюджет). |
